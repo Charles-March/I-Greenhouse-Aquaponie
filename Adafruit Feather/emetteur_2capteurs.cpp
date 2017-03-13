@@ -115,7 +115,7 @@ void setup()
   
   Serial.println("Getting barometric pressure from Adafruit_MPL115A2 ...");
   mpl115a2.begin();
-  }
+}
  
 void loop()
 {
@@ -148,12 +148,12 @@ void loop()
   data3 = reinterpret_cast<uint8_t*>(&pressureKPA); 
 
   uint8_t *data4;
-  data2 = reinterpret_cast<uint8_t*>(&temperatureC); 
+  data4 = reinterpret_cast<uint8_t*>(&temperatureC); 
 
   uint8_t *data5;
-  data3 = reinterpret_cast<uint8_t*>(&numero);
+  data5 = reinterpret_cast<uint8_t*>(&numero);
 
-  uint8_t fi[sizeof(double)*5 / sizeof(uint8_t)];
+  uint8_t fi[(sizeof(double)*3+sizeof(float)*2) / sizeof(uint8_t)];
       int i; 
       for(i=0;i<4;i++){
       fi[i]=data[i];
@@ -165,13 +165,13 @@ void loop()
       fi[i]=data3[i-8];
       }
       for(i=12;i<16;i++){
-      fi[i]=data3[i-12];
+      fi[i]=data4[i-12];
       }
       for(i=16;i<20;i++){
-      fi[i]=data3[i-16];
+      fi[i]=data5[i-16];
       }
       
-      rf95.send(fi, sizeof(double)*3+sizeof(float)*2);
+      rf95.send(fi, sizeof(double)*2+sizeof(float)*2+sizeof(double));
       rf95.waitPacketSent();
       Serial.print("Temperature DHT11 : " );
       Serial.print(temperature);
