@@ -24,6 +24,14 @@ while 1:
     elif i==4:
         t=s.recv(4)
         rx_data= struct.unpack('f', t)
+        tempWater=rx_data
+    elif i==5:
+        t=s.recv(2)
+        rx_data= struct.unpack('i', t)
+        luminosity=rx_data
+    elif i==6:
+        t=s.recv(4)
+        rx_data= struct.unpack('f', t)
         numero=rx_data
         print("Releve, temperature DHT11 : ")
         print(temperature)
@@ -33,8 +41,12 @@ while 1:
         print(temp2)
         print(", pression : ")
         print(pressure)
+        print(", temperature eau : ")
+        print(tempWater)
+        print(", luminosite : ")
+        print(luminosity)
         print("numero : ")
         print(numero)
-    elif i==5:
+    elif i==7:
         t=s.recv(4)
-    i = (i+1)%6
+    i = (i+1)%8
