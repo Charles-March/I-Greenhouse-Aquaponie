@@ -69,6 +69,7 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 #define DHTPIN A1
 #define DHTTYPE DHT11
 #define photocellPin A0
+#define WATER_SENSOR 12
 
 DHT dht(DHTPIN,DHTTYPE);
 Adafruit_MPL115A2 mpl115a2;
@@ -87,11 +88,13 @@ byte Data[12];
 byte addr[8];
 float celsius, fahrenheit;
 int photocellReading;
+boolean immerge;
 
 void setup() 
 {
   pinMode(LED, OUTPUT);     
   pinMode(RFM95_RST, OUTPUT);
+  pinMode(WATER_SENSOR, INPUT);
   digitalWrite(RFM95_RST, HIGH);
  
   while (!Serial);
@@ -213,7 +216,8 @@ void loop()
   humidite = dht.readHumidity();
   pressureKPA = mpl115a2.getPressure();
   temperatureC = mpl115a2.getTemperature();
-  photocellReading = 1023 - analogRead(photocellPin); 
+  photocellReading = 1023 - analogRead(photocellPin);
+  immerge = isExposedToWater();
   numero=1;
      
   uint8_t *data;
@@ -229,15 +233,18 @@ void loop()
   data4 = reinterpret_cast<uint8_t*>(&temperatureC); 
 
   uint8_t *data5;
-  data5 = reinterpret_cast<uint8_t*>(&celsius); 
+  data5 = reinterpret_cast<uint8_t*>(&celsius);
 
   uint8_t *data6;
   data6 = reinterpret_cast<uint8_t*>(&photocellReading);
 
   uint8_t *data7;
-  data7 = reinterpret_cast<uint8_t*>(&numero);
+  data7 = reinterpret_cast<uint8_t*>(&immerge);
 
-  uint8_t fi[(sizeof(double)*3+sizeof(float)*3+sizeof(int)) / sizeof(uint8_t)];
+  uint8_t *data8;
+  data8 = reinterpret_cast<uint8_t*>(&numero);
+
+  uint8_t fi[(sizeof(double)*3+sizeof(float)*3+sizeof(int)+sizeof(boolean)) / sizeof(uint8_t)];
   int j; 
   for(j=0;j<4;j++){
     fi[j]=data[j];
@@ -257,11 +264,14 @@ void loop()
   for(j=20;j<22;j++){
     fi[j]=data6[j-20];
   }
-  for(j=22;j<26;j++){
+  for(j=22;j<23;j++){
     fi[j]=data7[j-22];
   }
+  for(j=23;j<27;j++){
+    fi[j]=data8[j-23];
+  }
       
-  rf95.send(fi, sizeof(double)*3+sizeof(float)*3+sizeof(int));
+  rf95.send(fi, sizeof(double)*3+sizeof(float)*3+sizeof(int)+sizeof(boolean));
   rf95.waitPacketSent();
   Serial.print("Temperature DHT11 : " );
   Serial.print(temperature);
@@ -291,7 +301,26 @@ void loop()
   } else {
     Serial.println(" - Very bright");
   }
+  Serial.print("Est dans l'eau ? ");
+  Serial.println(immerge?"oui":"non");
   Serial.print("\n");
   digitalWrite(LED, LOW);
   delay(10000);
+}
+
+/************************************************************************/
+/*Function: Determine whether the sensor is exposed to the water        */
+/*Parameter:-void                                                       */
+/*Return:   -boolean,if it is exposed to the water,it will return true. */
+/************************************************************************/
+boolean isExposedToWater()
+{
+    if(digitalRead(WATER_SENSOR) == LOW){
+       Serial.print("Immerge\n");
+      return true;
+    }
+    else{
+      Serial.print("Hors de l'eau\n");
+      return false;
+    }
 }
