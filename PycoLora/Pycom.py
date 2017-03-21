@@ -30,6 +30,14 @@ while 1:
         rx_data= struct.unpack('i', t)
         luminosity=rx_data
     elif i==6:
+        t=s.recv(1)
+        rx_data= struct.unpack('b', t)
+        immerged=rx_data
+    elif i==7:
+        t=s.recv(1)
+        rx_data= struct.unpack('b', t)
+        magnet=rx_data
+    elif i==8:
         t=s.recv(4)
         rx_data= struct.unpack('f', t)
         numero=rx_data
@@ -45,8 +53,12 @@ while 1:
         print(tempWater)
         print(", luminosite : ")
         print(luminosity)
+        print(", immerge ? : ")
+        print(immerged)
+        print(", signal magnetique ? : ")
+        print(magnet)
         print("numero : ")
         print(numero)
-    elif i==7:
+    elif i==9:
         t=s.recv(4)
-    i = (i+1)%8
+    i = (i+1)%10

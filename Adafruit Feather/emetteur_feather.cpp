@@ -70,6 +70,7 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 #define DHTTYPE DHT11
 #define photocellPin A0
 #define WATER_SENSOR 12
+#define HALL_SENSOR A3
 
 DHT dht(DHTPIN,DHTTYPE);
 Adafruit_MPL115A2 mpl115a2;
@@ -89,12 +90,14 @@ byte addr[8];
 float celsius, fahrenheit;
 int photocellReading;
 boolean immerge;
+boolean hallstate;
 
 void setup() 
 {
   pinMode(LED, OUTPUT);     
   pinMode(RFM95_RST, OUTPUT);
   pinMode(WATER_SENSOR, INPUT);
+  pinMode(HALL_SENSOR, INPUT);
   digitalWrite(RFM95_RST, HIGH);
  
   while (!Serial);
@@ -216,8 +219,9 @@ void loop()
   humidite = dht.readHumidity();
   pressureKPA = mpl115a2.getPressure();
   temperatureC = mpl115a2.getTemperature();
-  photocellReading = 1023 - analogRead(photocellPin);
+  photocellReading = analogRead(photocellPin);
   immerge = isExposedToWater();
+  hallstate = isMagnet();
   numero=1;
      
   uint8_t *data;
@@ -242,9 +246,12 @@ void loop()
   data7 = reinterpret_cast<uint8_t*>(&immerge);
 
   uint8_t *data8;
-  data8 = reinterpret_cast<uint8_t*>(&numero);
+  data8 = reinterpret_cast<uint8_t*>(&hallstate);
 
-  uint8_t fi[(sizeof(double)*3+sizeof(float)*3+sizeof(int)+sizeof(boolean)) / sizeof(uint8_t)];
+  uint8_t *data9;
+  data9 = reinterpret_cast<uint8_t*>(&numero);
+
+  uint8_t fi[(sizeof(double)*3+sizeof(float)*3+sizeof(int)+sizeof(boolean)*2) / sizeof(uint8_t)];
   int j; 
   for(j=0;j<4;j++){
     fi[j]=data[j];
@@ -267,11 +274,14 @@ void loop()
   for(j=22;j<23;j++){
     fi[j]=data7[j-22];
   }
-  for(j=23;j<27;j++){
+  for(j=23;j<24;j++){
     fi[j]=data8[j-23];
   }
+  for(j=24;j<28;j++){
+    fi[j]=data9[j-24];
+  }
       
-  rf95.send(fi, sizeof(double)*3+sizeof(float)*3+sizeof(int)+sizeof(boolean));
+  rf95.send(fi, sizeof(double)*3+sizeof(float)*3+sizeof(int)+sizeof(boolean)*2);
   rf95.waitPacketSent();
   Serial.print("Temperature DHT11 : " );
   Serial.print(temperature);
@@ -302,7 +312,9 @@ void loop()
     Serial.println(" - Very bright");
   }
   Serial.print("Est dans l'eau ? ");
-  Serial.println(immerge?"oui":"non");
+  Serial.print(immerge?"oui | ":"non | ");
+  Serial.print("Reception de signal magnetique ? ");
+  Serial.println(hallstate?"oui":"non");
   Serial.print("\n");
   digitalWrite(LED, LOW);
   delay(10000);
@@ -316,7 +328,7 @@ void loop()
 boolean isExposedToWater()
 {
     if(digitalRead(WATER_SENSOR) == LOW){
-       Serial.print("Immerge\n");
+      Serial.print("Immerge\n");
       return true;
     }
     else{
@@ -324,3 +336,16 @@ boolean isExposedToWater()
       return false;
     }
 }
+
+boolean isMagnet()
+{
+  if(digitalRead(HALL_SENSOR == LOW)){
+      Serial.print("signal magnetique\n");
+      return true;
+  }
+  else{
+      Serial.print("pas de signal\n");
+      return false;
+  }
+}
+

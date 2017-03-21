@@ -14,7 +14,7 @@ void setup(void) {
 }
  
 void loop(void) {
-  photocellReading = 1023 - analogRead(photocellPin);  
+  photocellReading = analogRead(photocellPin);  
  
   Serial.print("Analog reading = ");
   Serial.print(photocellReading);     // the raw analog reading
